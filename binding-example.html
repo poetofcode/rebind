@@ -25,99 +25,9 @@
 </p>
 
 <script type="text/javascript" src="deps/jquery-2.1.1.min.js"></script>
+<script type="text/javascript" src="rebind.js"></script>
 <script>
 $(document).ready(function(){
-
-	var bounds = [];
-
-	var bindToUI = function(mapperUI) {
-		var execute = null,
-			subscribers = [],
-			self = this,
-			mapper = null;
-
-		//
-		// Initial setup
-		//
-		if(mapperUI) {
-			mapper = mapperUI;
-			mapper.registerOnUpdateUI(setExecute);
-		}
-
-		//
-		// Private section
-		//
-		function executeSubscribers() {
-			for(var i=0; i<subscribers.length; i++) {
-				setTimeout((function() {
-					if(!isFunction(subscribers[i])) return;
-					subscribers[i]();
-				})(i));
-			}
-		}
-
-		function setExecute(param) {
-			if(isFunction(param)) {
-				execute = param;
-			} else {
-				execute = function() { return param };
-			}
-			executeSubscribers();
-		}
-
-		function executeAndUpdateUI() {
-			var res = execute();
-			if(mapper && isFunction(mapper.onUpdateData)) {
-				mapper.onUpdateData(res);
-			}
-			return res;
-		}
-
-		function subscriberExists(func) {
-			for(var i=0; i<subscribers.length; i++) {
-				if(func === subscribers[i]) {
-					return true;
-				}
-			}
-
-			return false;
-		}
-
-		//
-		// Main function
-		//
-		var bound = function(param) {
-			if(!param && !execute) {
-				return;
-			}
-
-			if(!param && execute) {
-				if(arguments.callee.caller && arguments.callee.caller.arguments.callee.caller) {
-					var caller = arguments.callee.caller.arguments.callee.caller;
-
-					for(var i=0; i<bounds.length; i++) {
-						if(subscriberExists(caller)) continue;
-						subscribers.push(caller);
-					}
-				}
-				return executeAndUpdateUI();
-			}
-
-			setExecute(param);
-			return executeAndUpdateUI();
-		}
-
-		bounds.push(bound);
-		return bound;
-	}
-
-	//
-	// Service methods
-	//
-	function isFunction(functionToCheck) {
-		var getType = {};
-		return functionToCheck && getType.toString.call(functionToCheck) === '[object Function]';
-	}
 
 	function defaultTextMapper(element) {
 		var el = element;
@@ -147,18 +57,20 @@ $(document).ready(function(){
 
 
 	// MAIN
-	var a = bindToUI( defaultTextMapper($('#text1')) ),
-		b = bindToUI( defaultTextMapper($('#text2')) ),
-		c = bindToUI( defaultSpanMapper($('#summ')) ),
-		d = bindToUI( defaultSpanMapper($('#mult')) ),
-		e = bindToUI( defaultSpanMapper($('#diff')) );
+	var a = rebind.create( defaultTextMapper($('#text1')) ),
+		b = rebind.create( defaultTextMapper($('#text2')) ),
+		c = rebind.create( defaultSpanMapper($('#summ')) ),
+		d = rebind.create( defaultSpanMapper($('#mult')) ),
+		e = rebind.create( defaultSpanMapper($('#diff')) );
 
 	a(1);
-	b(2);
+	b(function () { 
+		return parseInt(a()) + 2; 
+	});
 	c(function() { return parseInt(a()) + parseInt(b()) });
 	d(function() { return parseInt(a()) * parseInt(b()) });
 	e(function() { return parseInt(a()) - parseInt(b()) });
-
+	
 });
 </script>
 </body>
